@@ -11,11 +11,11 @@ type internal FSharpSigTreeBuilder(file, lexer, sigs, lifetime) =
     override x.CreateFSharpFile() =
         let mark = x.Mark()
         for s in sigs do
-            x.ProcessTopLevelSignature(s)
+            x.ProcessModuleOrNamespaceSig(s)
         x.FinishFile(mark, ElementType.F_SHARP_SIG_FILE)
 
-    member x.ProcessTopLevelSignature (SynModuleOrNamespaceSig(lid,_,isModule,sigs,_,attrs,_,range)) =
-        let mark, elementType = x.StartTopLevelDeclaration lid attrs isModule range
+    member x.ProcessModuleOrNamespaceSig(SynModuleOrNamespaceSig(lid,_,isModule,sigs,_,attrs,_,range)) =
+        let mark, elementType = x.StartTopLevelDeclaration(lid, attrs, isModule, range)
         for s in sigs do x.ProcessModuleMemberSignature s
         x.FinishTopLevelDeclaration mark range elementType
 
@@ -36,13 +36,12 @@ type internal FSharpSigTreeBuilder(file, lexer, sigs, lifetime) =
 
         | SynModuleSigDecl.ModuleAbbrev(IdentRange idRange as id,_,range) ->
             let mark = x.Mark(idRange)
-            x.ProcessIdentifier id
             x.Done(idRange, mark, ElementType.MODULE_ABBREVIATION)
 
         | SynModuleSigDecl.Val(ValSpfn(attrs,id,SynValTyparDecls(typeParams,_,_),_,_,_,_,_,_,_,_),range) ->
             let mark = x.ProcessAttributesAndStartRange attrs (Some id) range
             let isActivePattern = IsActivePatternName id.idText 
-            if isActivePattern then x.ProcessActivePatternId id else x.ProcessIdentifier id
+            if isActivePattern then x.ProcessActivePatternId id else () // x.ProcessIdentifier id
             for p in typeParams do x.ProcessTypeParameter p ElementType.TYPE_PARAMETER_OF_METHOD_DECLARATION
             x.Done(range, mark, ElementType.LET)
         | _ -> ()
@@ -91,7 +90,6 @@ type internal FSharpSigTreeBuilder(file, lexer, sigs, lifetime) =
         match memberSig with
         | SynMemberSig.Member(ValSpfn(attrs,id,_,_,_,_,_,_,_,_,_),flags,range) ->
             let mark = x.ProcessAttributesAndStartRange attrs (Some id) range
-            x.ProcessIdentifier id
             let elementType =
                 if flags.IsDispatchSlot then
                     ElementType.ABSTRACT_SLOT

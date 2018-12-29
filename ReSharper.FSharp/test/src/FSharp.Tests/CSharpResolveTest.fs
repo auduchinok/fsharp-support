@@ -45,6 +45,11 @@ type CSharpResolveTest() =
 
     [<Test>] member x.``Class 01 - Abstract``() = x.DoNamedTest()
     [<Test>] member x.``Class 02 - Sealed``() = x.DoNamedTest()
+    [<Test>] member x.``Class 03 - No attributes``() = x.DoNamedTest()
+
+    [<Test>] member x.``Enum 01``() = x.DoNamedTest()
+
+    [<Test>] member x.``Nested module 01``() = x.DoNamedTest()
 
     [<Test>] member x.``Val fields 01``() = x.DoNamedTest()
     [<Test>] member x.``Val fields 02, compiled name ignored``() = x.DoNamedTest()

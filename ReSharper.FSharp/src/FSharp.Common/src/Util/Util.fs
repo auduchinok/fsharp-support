@@ -25,7 +25,7 @@ module rec CommonUtil =
     let inline isNotNull x = not (isNull x)
     
     let inline (|NotNull|_|) x =
-        if isNull x then None else Some()
+        if isNull x then None else Some x
 
     let ensureAbsolute (path: FileSystemPath) (projectDirectory: FileSystemPath) =
         match path.AsRelative() with

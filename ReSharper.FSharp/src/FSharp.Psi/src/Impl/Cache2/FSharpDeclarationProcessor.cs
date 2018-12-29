@@ -54,31 +54,37 @@ namespace JetBrains.ReSharper.Plugins.FSharp.Psi.Impl.Cache2
       }
     }
 
-    public override void VisitFSharpNamespaceDeclaration(IFSharpNamespaceDeclaration decl)
+    public override void VisitDeclaredNamespaceDeclaration(IDeclaredNamespaceDeclaration decl)
     {
       Builder.StartPart(new DeclaredNamespacePart(decl));
-      FinishModuleLikeDeclaraion(decl);
+      FinishModuleLikeDeclaration(decl);
     }
 
-    public override void VisitFSharpGlobalNamespaceDeclaration(IFSharpGlobalNamespaceDeclaration decl)
+    public override void VisitGlobalNamespaceDeclaration(IGlobalNamespaceDeclaration decl)
     {
       foreach (var memberDecl in decl.MembersEnumerable)
         memberDecl.Accept(this);
     }
 
-    public override void VisitTopLevelModuleDeclaration(ITopLevelModuleDeclaration decl)
+    public override void VisitAnonModuleDeclaration(IAnonModuleDeclaration decl)
     {
-      Builder.StartPart(new TopLevelModulePart(decl, Builder));
-      FinishModuleLikeDeclaraion(decl);
+      Builder.StartPart(new AnonModulePart(decl, Builder));
+      FinishModuleLikeDeclaration(decl);
+    }
+
+    public override void VisitNamedModuleDeclaration(INamedModuleDeclaration decl)
+    {
+      Builder.StartPart(new NamedModulePart(decl, Builder));
+      FinishModuleLikeDeclaration(decl);
     }
 
     public override void VisitNestedModuleDeclaration(INestedModuleDeclaration decl)
     {
       Builder.StartPart(new NestedModulePart(decl, Builder));
-      FinishModuleLikeDeclaraion(decl);
+      FinishModuleLikeDeclaration(decl);
     }
 
-    private void FinishModuleLikeDeclaraion(IModuleLikeDeclaration decl)
+    private void FinishModuleLikeDeclaration(IModuleLikeDeclaration decl)
     {
       foreach (var memberDecl in decl.MembersEnumerable)
         memberDecl.Accept(this);

@@ -5,21 +5,21 @@ open JetBrains.ReSharper.Plugins.FSharp.Psi.Parsing
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.PrettyNaming
 
-type internal FSharpImplTreeBuilder(file, lexer, decls, lifetime) =
+type FSharpImplTreeBuilder(file, lexer, decls, lifetime) =
     inherit FSharpTreeBuilderBase(file, lexer, lifetime)
 
     override x.CreateFSharpFile() =
         let mark = x.Mark()
         for decl in decls do
-            x.ProcessTopLevelDeclaration(decl)
+            x.ProcessModuleOrNamespace(decl)
         x.FinishFile(mark, ElementType.F_SHARP_IMPL_FILE)
 
-    member private x.ProcessTopLevelDeclaration (SynModuleOrNamespace(lid,_,isModule,decls,_,attrs,_,range)) =
-        let mark, elementType = x.StartTopLevelDeclaration lid attrs isModule range
+    member x.ProcessModuleOrNamespace(SynModuleOrNamespace(lid,_,kind,decls,_,attrs,_,range)) =
+        let mark, elementType = x.StartTopLevelDeclaration(lid, attrs, kind, range)
         for decl in decls do x.ProcessModuleMemberDeclaration decl
         x.FinishTopLevelDeclaration mark range elementType  
 
-    member internal x.ProcessModuleMemberDeclaration moduleMember =
+    member x.ProcessModuleMemberDeclaration moduleMember =
         match moduleMember with
         | SynModuleDecl.NestedModule(ComponentInfo(attrs,_,_,lid,_,_,_,_),_,decls,_,range) ->
             let mark = x.StartNestedModule attrs lid range
@@ -71,7 +71,7 @@ type internal FSharpImplTreeBuilder(file, lexer, decls, lifetime) =
             | _ -> ElementType.OTHER_DIRECTIVE
         x.Done(range, mark, elementType)
 
-    member internal x.ProcessType (TypeDefn(ComponentInfo(attrs, typeParams,_,lid,_,_,_,_), repr, members, range)) =
+    member x.ProcessType (TypeDefn(ComponentInfo(attrs, typeParams,_,lid,_,_,_,_), repr, members, range)) =
         match repr with
         | SynTypeDefnRepr.ObjectModel(SynTypeDefnKind.TyconAugmentation,_,_) ->
             let tryGetShortName (lid: LongIdent) =
@@ -134,7 +134,7 @@ type internal FSharpImplTreeBuilder(file, lexer, decls, lifetime) =
             for m in members do x.ProcessTypeMember m
             x.Done(range, mark, elementType)
 
-    member internal x.ProcessTopLevelLetPat (pat: SynPat) (attrs: SynAttributes) =
+    member x.ProcessTopLevelLetPat (pat: SynPat) (attrs: SynAttributes) =
         match pat with
         | SynPat.LongIdent(LongIdentWithDots(lid,_),_,typeParamsOption,memberParams,_,range) ->
             match lid with
@@ -142,7 +142,7 @@ type internal FSharpImplTreeBuilder(file, lexer, decls, lifetime) =
                 let mark = x.ProcessAttributesAndStartRange attrs (Some id) range
                 let idText = id.idText
                 let isActivePattern = IsActivePatternName id.idText 
-                if isActivePattern then x.ProcessActivePatternId id else x.ProcessIdentifier id
+                if isActivePattern then x.ProcessActivePatternId id else () // x.ProcessIdentifier id
 
                 match typeParamsOption with
                 | Some (SynValTyparDecls(typeParams,_,_)) ->
@@ -155,7 +155,7 @@ type internal FSharpImplTreeBuilder(file, lexer, decls, lifetime) =
         | SynPat.Named(_,id,_,_,range) ->
             let mark = x.ProcessAttributesAndStartRange attrs (Some id) range
             let isActivePattern = IsActivePatternName id.idText 
-            if isActivePattern then x.ProcessActivePatternId id else x.ProcessIdentifier id
+            if isActivePattern then x.ProcessActivePatternId id else () // x.ProcessIdentifier id
 
             x.Done(range, mark, ElementType.LET)
 
